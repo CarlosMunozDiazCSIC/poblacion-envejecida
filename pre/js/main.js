@@ -1,8 +1,6 @@
 import { getIframeParams } from './height';
 import { setChartCanvas, setChartCanvasImage } from './canvas-image';
 import { setRRSSLinks } from './rrss';
-import { getInTooltip, getOutTooltip, positionTooltip } from './tooltip';
-import { numberWithCommas } from './helpers';
 import './tabs';
 import 'url-search-params-polyfill';
 
@@ -34,60 +32,36 @@ function main(error, municipios, aux) {
     if (error) throw error;
 
     let data = csv.parse(aux);
-
-    let muni = topojson.feature(provincias, municipios.objects.municipios);
+    let muni = topojson.feature(municipios, municipios.objects.municipios);
 
     ///HACEMOS EL JOIN
     muni.features.forEach(function(item) {
-
+        let join = data.filter(function(subItem) {
+            if(subItem.Municipios.substr(0,5) == item.properties.Codigo) {
+                return subItem;
+            }
+        });
+        join = join[0];
+        item.data = join;
     });
+
+    //Uso de colores
+    let colors = d3.scaleLinear()
+        .domain([15,30,45,60])
+        .range(['#a7e7e7', '#68a7a7', '#2b6b6c', '#003334']);
 
     let projection = d3_composite.geoConicConformalSpain().scale(2000).fitSize([width,height], muni);
     let path = d3.geoPath(projection);
 
-    mapLayer.selectAll(".provincias")
+    mapLayer.selectAll(".mun")
         .data(muni.features)
         .enter()
         .append("path")
-        .attr("class", "provincias")
+        .attr("class", "mun")
         .style('fill', function(d) {
-            let color = '';
-            let _65 = d.properties.total_porc_mas65 * 100;
-            let _80 = d.properties.total_porc_mas80 * 100;
-
-            if(_65 > 10 && _65 < 17.25) {
-
-                if(_80 >= 0 && _80 < 4.3) {
-                    color = '#e8e8e8';
-                } else if (_80 >= 4.3 && _80 < 8.6) {
-                    color = '#b8d6be';
-                } else {
-                    color = '#73ae7f';
-                }
-
-            } else if (_65 >= 17.25 && _65 < 24.5) {
-
-                if(_80 >= 0 && _80 < 4.3) {
-                    color = '#b5c0da';
-                } else if (_80 >= 4.3 && _80 < 8.6) {
-                    color = '#8fb2b3';
-                } else {
-                    color = '#5a9178';
-                }
-
-            } else {
-
-                if(_80 >= 0 && _80 < 4.3) {
-                    color = '#6c83b5';
-                } else if (_80 >= 4.3 && _80 < 8.6) {
-                    color = '#567994';
-                } else {
-                    color = '#2b5a5b';
-                }
-
-            }
-
-            return color;
+            console.log(d);
+            return 'blue';
+            //return colors(d);
         })
         .style('stroke', '#282828')
         .style('stroke-width', '0.25px')
@@ -113,14 +87,6 @@ function main(error, municipios, aux) {
             // //Tooltip
             // getInTooltip(tooltip);                
             // positionTooltip(window.event, tooltip);
-        })
-        .on('mouseout', function(d,i,e) {
-            //Línea diferencial
-            this.style.stroke = '#282828';
-            this.style.strokeWidth = '0.25px';
-
-            //Desaparición del tooltip
-            getOutTooltip(tooltip); 
         });
 
     mapLayer.append('path')
