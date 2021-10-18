@@ -25,14 +25,16 @@ const csv = d3.dsvFormat(";");
 
 d3.queue()
     .defer(d3.json, 'https://raw.githubusercontent.com/CarlosMunozDiazCSIC/poblacion-envejecida/main/data/municipios.json')
+    .defer(d3.json, 'https://raw.githubusercontent.com/CarlosMunozDiazCSIC/poblacion-envejecida/main/data/provincias.json')
     .defer(d3.text, 'https://raw.githubusercontent.com/CarlosMunozDiazCSIC/poblacion-envejecida/main/data/padron_refinado.csv')
     .await(main);
 
-function main(error, municipios, aux) {
+function main(error, municipios, provincias, aux) {
     if (error) throw error;
 
     let data = csv.parse(aux);
     let muni = topojson.feature(municipios, municipios.objects.municipios);
+    console.log(provincias);
 
     ///HACEMOS EL JOIN
     muni.features.forEach(function(item) {
@@ -47,7 +49,7 @@ function main(error, municipios, aux) {
 
     //Uso de colores
     let colors = d3.scaleLinear()
-        .domain([15,30,45,60])
+        .domain([15,30,45,80])
         .range(['#a7e7e7', '#68a7a7', '#2b6b6c', '#003334']);
 
     let projection = d3_composite.geoConicConformalSpain().scale(2000).fitSize([width,height], muni);
@@ -59,12 +61,17 @@ function main(error, municipios, aux) {
         .append("path")
         .attr("class", "mun")
         .style('fill', function(d) {
-            console.log(d);
-            return 'blue';
-            //return colors(d);
+            if(d.data) {
+                if (d.data.porc_envejecido != 'NA') {
+                    return colors(+d.data.porc_envejecido.replace(',','.'));
+                } else {
+                    return '#ccc';
+                }                
+            } else {
+                return '#ccc';
+            }
+            
         })
-        .style('stroke', '#282828')
-        .style('stroke-width', '0.25px')
         .attr("d", path)
         .on('click', function(d,i,e){
             console.log(d);
