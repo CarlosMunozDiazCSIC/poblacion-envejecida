@@ -23,20 +23,30 @@ const height = parseInt(chartBlock.style('height'));
 
 let mapLayer = chartBlock.append('svg').attr('id', 'map').attr('width', width).attr('height', height);
 
+const csv = d3.dsvFormat(";");
+
 d3.queue()
     .defer(d3.json, 'https://raw.githubusercontent.com/CarlosMunozDiazCSIC/poblacion-envejecida/main/data/municipios.json')
+    .defer(d3.text, 'https://raw.githubusercontent.com/CarlosMunozDiazCSIC/poblacion-envejecida/main/data/padron_refinado.csv')
     .await(main);
 
-function main(error, provincias) {
+function main(error, municipios, aux) {
     if (error) throw error;
 
-    let provs = topojson.feature(provincias, provincias.objects.provincias);
+    let data = csv.parse(aux);
 
-    let projection = d3_composite.geoConicConformalSpain().scale(2000).fitSize([width,height], provs);
+    let muni = topojson.feature(provincias, municipios.objects.municipios);
+
+    ///HACEMOS EL JOIN
+    muni.features.forEach(function(item) {
+
+    });
+
+    let projection = d3_composite.geoConicConformalSpain().scale(2000).fitSize([width,height], muni);
     let path = d3.geoPath(projection);
 
     mapLayer.selectAll(".provincias")
-        .data(provs.features)
+        .data(muni.features)
         .enter()
         .append("path")
         .attr("class", "provincias")
