@@ -14,12 +14,13 @@ import '../css/main.scss';
 
 ///// VISUALIZACIÓN DEL GRÁFICO //////
 let chartBlock = d3.select('#chart');
-let tooltip = d3.select('#tooltip');
 
 const width = parseInt(chartBlock.style('width'));
 const height = parseInt(chartBlock.style('height'));
 
 let mapLayer = chartBlock.append('svg').attr('id', 'map').attr('width', width).attr('height', height);
+let data, muni, provs;
+let projection, path;
 
 const csv = d3.dsvFormat(";");
 
@@ -32,9 +33,9 @@ d3.queue()
 function main(error, municipios, provincias, aux) {
     if (error) throw error;
 
-    let data = csv.parse(aux);
-    let muni = topojson.feature(municipios, municipios.objects.municipios);
-    let provs = topojson.feature(provincias, provincias.objects.provs);
+    data = csv.parse(aux);
+    muni = topojson.feature(municipios, municipios.objects.municipios);
+    provs = topojson.feature(provincias, provincias.objects.provs);
 
     ///HACEMOS EL JOIN
     muni.features.forEach(function(item) {
@@ -47,13 +48,8 @@ function main(error, municipios, provincias, aux) {
         item.data = join;
     });
 
-    //Uso de colores
-    let colors = d3.scaleLinear()
-        .domain([15,30,45,80])
-        .range(['#a7e7e7', '#68a7a7', '#2b6b6c', '#003334']);
-
-    let projection = d3_composite.geoConicConformalSpain().scale(2000).fitSize([width,height], muni);
-    let path = d3.geoPath(projection);
+    projection = d3_composite.geoConicConformalSpain().scale(2000).fitSize([width,height], muni);
+    path = d3.geoPath(projection);
 
     mapLayer.selectAll(".mun")
         .data(muni.features)
@@ -61,41 +57,51 @@ function main(error, municipios, provincias, aux) {
         .append("path")
         .attr("class", "mun")
         .style('stroke','none')
+        .style('opacity', '1')
         .style('fill', function(d) {
             if(d.data) {
                 if (d.data.porc_envejecido != 'NA') {
-                    return colors(+d.data.porc_envejecido.replace(',','.'));
+                    let color = '';
+                    let env = +d.data.porc_envejecido.replace(',','.');
+                    let total = +d.data.total;
+
+                    if ( total < 1000) {
+                        if (env < 15) {
+                            color = '#e8e8e8';
+                        } else if (env >= 15 && env < 30) {
+                            color = '#b5c0da';
+                        } else {
+                            color = '#6c83b5';
+                        }
+                    } else if ( total >= 1000 && total < 20000) {
+                        if (env < 15) {
+                            color = '#b8d6be';
+                        } else if (env >= 15 && env < 30) {
+                            color = '#8fb2b3';
+                        } else {
+                            color = '#567994';
+                        }
+                    } else {
+                        if (env < 15) {
+                            color = '#73ae7f';
+                        } else if (env >= 15 && env < 30) {
+                            color = '#5a9178';
+                        } else {
+                            color = '#2b5a5b';
+                        }
+                    }
+
+                    return color;
+
+
                 } else {
                     return '#ccc';
                 }                
             } else {
                 return '#ccc';
-            }
-            
+            }            
         })
-        .attr("d", path)
-        .on('click', function(d,i,e){
-            console.log(d);
-            //Línea diferencial y cambio del polígonos
-            // let currentProv = this;
-            
-            // document.getElementsByTagName('svg')[0].removeChild(this);
-            // document.getElementsByTagName('svg')[0].appendChild(currentProv);
-
-            // currentProv.style.stroke = '#000';
-            // currentProv.style.strokeWidth = '1px';
-
-            // //Elemento HTML > Tooltip (mostrar nombre de provincia, año y Proporcións para más de 100 años)
-            // let html = '<p class="chart__tooltip--title">' + d.properties.name + '<p class="chart__tooltip--text">Proporción general (100 años o más): ' + numberWithCommas(d.properties.prop_total_65_100 + '</p>' + 
-            // '<p class="chart__tooltip--text">Proporción en mujeres (100 años o más): ' + numberWithCommas(d.properties.prop_mujeres_65_100 + '</p>' + 
-            // '<p class="chart__tooltip--text">Proporción en hombres (100 años o más): ' + numberWithCommas(d.properties.prop_hombres_65_100 + '</p>';
-
-            // tooltip.html(html);
-
-            // //Tooltip
-            // getInTooltip(tooltip);                
-            // positionTooltip(window.event, tooltip);
-        });
+        .attr("d", path);
 
     mapLayer.append('path')
         .style('fill', 'none')
@@ -112,6 +118,156 @@ function main(error, municipios, provincias, aux) {
         .style('fill', 'transparent');
 
     setChartCanvas();
+}
+
+let leyenda = document.getElementsByClassName('legend__viz')[0];
+let bloquesLeyenda = leyenda.getElementsByTagName('div');
+
+for (let i = 0; i < bloquesLeyenda.length; i++) {
+    bloquesLeyenda[i].addEventListener('mouseover', function(e) {
+        for (let i = 0; i < bloquesLeyenda.length; i++) {
+            bloquesLeyenda[i].style.border = '0px';
+        }
+        this.style.border = '1.5px solid';
+        setCities(this.getAttribute('data-type'));
+    });
+
+    bloquesLeyenda[i].addEventListener('mouseout', function(e) {
+        this.style.border = '0px solid';
+        setCities();
+    });
+}
+
+function setCities(tipo) {
+    if(tipo) {
+        mapLayer.selectAll(".mun")
+            .data(muni.features)
+            .style('opacity', function(d) {
+                if(d.data) {
+                    if(d.data.porc_envejecido != 'NA') {
+                        let env = +d.data.porc_envejecido.replace(',','.');
+                        let total = +d.data.total;
+
+                        return setStroke(tipo, total, env, '1', '0.25');
+                    } else {
+                        return '0.25';
+                    }
+
+                } else {
+                    return '0.25';
+                }
+            })
+            .style('stroke-width', function(d) {
+                if(d.data) {
+                    if(d.data.porc_envejecido != 'NA') {
+                        let env = +d.data.porc_envejecido.replace(',','.');
+                        let total = +d.data.total;
+
+                        return setStroke(tipo, total, env, '0.25px', '0px');
+                    } else {
+                        return '0px';
+                    }
+
+                } else {
+                    return '0px';
+                }
+            })
+            .style('stroke', function(d) {
+                if(d.data) {
+                    if(d.data.porc_envejecido != 'NA') {
+                        let env = +d.data.porc_envejecido.replace(',','.');
+                        let total = +d.data.total;
+
+                        return setStroke(tipo, total, env, '#262626', 'none');
+                    } else {
+                        return 'none';
+                    }
+
+                } else {
+                    return 'none';
+                }
+            })
+
+    } else {
+        mapLayer.selectAll(".mun")
+            .style('opacity', '1');
+    }
+}
+
+function setStroke(tipo, total, env, first, second) {
+    if(tipo == 'peque-joven') { 
+
+        if(total < 1000 && env < 15) {
+            return first;
+        } else {
+            return second;
+        }
+
+    } else if (tipo == 'peque-enveje') {
+
+        if(total < 1000 && (env >= 15 && env < 30)) {
+            return first;
+        } else {
+            return second;
+        }
+
+    } else if (tipo == 'peque-muyenv') {
+
+        if(total < 1000 && env >= 30) {
+            return first;
+        } else {
+            return second;
+        }
+
+    } else if(tipo == 'medi-joven') { 
+
+        if((total >= 1000 && total < 20000) && env < 15) {
+            return first;
+        } else {
+            return second;
+        }
+
+    } else if (tipo == 'medi-enveje') {
+
+        if((total >= 1000 && total < 20000) && (env >= 15 && env < 30)) {
+            return first;
+        } else {
+            return second;
+        }
+
+    } else if (tipo == 'medi-muyenv') {
+
+        if((total >= 1000 && total < 20000) && env >= 30) {
+            return first;
+        } else {
+            return second;
+        }
+
+    } else if(tipo == 'grande-joven') { 
+
+        if(total >= 20000 && env < 15) {
+            return first;
+        } else {
+            return second;
+        }
+
+    } else if (tipo == 'grande-enveje') {
+
+        if(total >= 20000 && (env >= 15 && env < 30)) {
+            return first;
+        } else {
+            return second;
+        }
+
+    } else if (tipo == 'grande-muyenv') {
+
+        if(total >= 20000 && env >= 30) {
+            return first;
+        } else {
+            return second;
+        }
+
+    }
 }
 
 ///// REDES SOCIALES /////

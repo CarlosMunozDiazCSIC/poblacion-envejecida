@@ -18,15 +18,32 @@
             <section class="content b-chart active" id="chartBlock">
                 <div class="b-title">
                     <h1 class="title">Proporción de población envejecida (65 o más años) respecto al total a nivel municipal</h1>
+                    <h2 class="subtitle">Sitúe el curso encima de los cuadrados de la leyenda para identificar con más claridad los municipios en ese nivel</h2>
                 </div>
                 <div class="chart__legend">
-                    <span class="chart__legend--gradient"></span>
-                    <div class="chart__legend--data">
-                        <span>0%</span>
-                        <span>40%</span>
-                        <span>80%</span>
+                    <div class="legend__upper">
+                        <div class="legend__y-axis">
+                            <span>Tamaño del municipio</span>
+                            <img src="https://www.ecestaticos.com/file/bfab0a6bdd6a4e88be2cef8eb71edb0f/1614941081-flecha-decha.svg" width="15" height="5" alt="Flecha">
+                        </div>
+                        <div class="legend__viz">
+                            <div style="background-color:#73ae7f" data-type="grande-joven"></div>
+                            <div style="background-color:#5a9178" data-type="grande-enveje"></div>
+                            <div style="background-color:#2b5a5b" data-type="grande-muyenv"></div>
+
+                            <div style="background-color:#b8d6be" data-type="medi-joven"></div>
+                            <div style="background-color:#8fb2b3" data-type="medi-enveje"></div>
+                            <div style="background-color:#567994" data-type="medi-muyenv"></div>
+
+                            <div style="background-color:#e8e8e8" data-type="peque-joven"></div>
+                            <div style="background-color:#b5c0da" data-type="peque-enveje"></div>
+                            <div style="background-color:#6c83b5" data-type="peque-muyenv"></div>
+                        </div>                    
                     </div>
-                </div>   
+                    <div class="legend__down"><span>% +65</span>
+                        <img src="https://www.ecestaticos.com/file/bfab0a6bdd6a4e88be2cef8eb71edb0f/1614941081-flecha-decha.svg" width="15" height="5" alt="Flecha">
+                    </div>
+                </div>  
                 <div class="chart__viz" id="chart"></div>                              
                 <!-- Pie de gráfico -->
                 <div class="chart__footer">
