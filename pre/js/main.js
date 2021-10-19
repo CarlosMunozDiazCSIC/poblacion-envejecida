@@ -34,7 +34,7 @@ function main(error, municipios, provincias, aux) {
 
     let data = csv.parse(aux);
     let muni = topojson.feature(municipios, municipios.objects.municipios);
-    console.log(provincias);
+    let provs = topojson.feature(provincias, provincias.objects.provs);
 
     ///HACEMOS EL JOIN
     muni.features.forEach(function(item) {
@@ -60,6 +60,7 @@ function main(error, municipios, provincias, aux) {
         .enter()
         .append("path")
         .attr("class", "mun")
+        .style('stroke','none')
         .style('fill', function(d) {
             if(d.data) {
                 if (d.data.porc_envejecido != 'NA') {
@@ -100,6 +101,15 @@ function main(error, municipios, provincias, aux) {
         .style('fill', 'none')
         .style('stroke', '#000')
         .attr('d', projection.getCompositionBorders());
+
+    mapLayer.selectAll('.prov')
+        .data(provs.features)
+        .enter()
+        .append('path')
+        .attr('d', path)
+        .style('stroke-width','0.25px')
+        .style('stroke', '#000')
+        .style('fill', 'transparent');
 
     setChartCanvas();
 }
